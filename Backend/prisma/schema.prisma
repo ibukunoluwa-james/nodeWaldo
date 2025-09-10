@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Image {
+  id         Int         @id @default(autoincrement())
+  slug       String      @unique
+  title      String
+  filename   String
+  width      Int? // optional original pixel width
+  height     Int? // optional original pixel height
+  characters Character[]
+  createdAt  DateTime    @default(now())
+  Game       Game[]
+}
+
+model Character {
+  id          Int           @id @default(autoincrement())
+  name        String
+  imageId     Int
+  x           Float // normalized [0..1]
+  y           Float // normalized [0..1]
+  radius      Float // allowed radius in normalized units (e.g. 0.03)
+  image       Image         @relation(fields: [imageId], references: [id])
+  FoundMarker FoundMarker[]
+}
+
+model Game {
+  id          Int           @id @default(autoincrement())
+  imageId     Int
+  startedAt   DateTime      @default(now())
+  finishedAt  DateTime?
+  playerName  String? // for anonymous-friendly leaderboard
+  timeMs      Int? // final duration in ms
+  foundCount  Int           @default(0)
+  image       Image         @relation(fields: [imageId], references: [id])
+  FoundMarker FoundMarker[]
+}
+
+model FoundMarker {
+  id        Int       @id @default(autoincrement())
+  gameId    Int
+  charId    Int
+  x         Float // normalized click x
+  y         Float // normalized click y
+  correct   Boolean   @default(false)
+  game      Game      @relation(fields: [gameId], references: [id])
+  character Character @relation(fields: [charId], references: [id])
+}
